@@ -1,24 +1,21 @@
 {
   "name": "hacker",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "body-parser": "^2.2.0"
+  },
+  "engines": {
+    "node": "22.16.0"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sam-Adk/HACKER.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/sam-Adk/HACKER/issues"
-  },
-  "homepage": "https://github.com/sam-Adk/HACKER#readme",
-  "description": "",
-  "dependencies": {
-    "express": "^5.1.0"
   }
 }
 
