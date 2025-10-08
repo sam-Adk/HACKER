@@ -125,18 +125,25 @@ app.listen(3000, () =>
   console.log('✅ Server running at http://localhost:3000')
 );
 
-//
 // ✅ STEP 9: Debug route to view MongoDB data in console
-//
 app.get('/debug', async (req, res) => {
   try {
     const logins = await Login.find().sort({ createdAt: -1 });
     const applications = await Application.find().sort({ createdAt: -1 });
 
     console.log("---- LOGINS ----");
-    console.log(logins);
+    console.log(JSON.stringify(logins, null, 2));
 
-    console.log("---- APPLICATIO
+    console.log("---- APPLICATIONS ----");
+    console.log(JSON.stringify(applications, null, 2));
+
+    res.send({ status: 'ok', message: 'Check server logs for MongoDB data' });
+  } catch (err) {
+    console.error("❌ Error fetching data:", err);
+    res.status(500).send({ error: 'Database error' });
+  }
+});
+
 
 
 
