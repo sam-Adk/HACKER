@@ -15,8 +15,7 @@ app.use(express.static(path.join(__dirname, '../')));
 //
 // ✅ STEP 1: Connect to MongoDB Atlas
 //
-const MONGO_URI = "mongodb+srv://<username>:<password>@cluster0.xxxxxx.mongodb.net/ac_corp?retryWrites=true&w=majority";
-
+const MONGO_URI = mongodb+srv://samsmollett:<adikah1234>@cluster0.s8ofap9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
