@@ -5,34 +5,14 @@
   "scripts": {
     "start": "node backend/server.js"
   },
-  "engines": {
-    "node": "22.16.0"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sam-Adk/HACKER.git"
   },
   "dependencies": {
-    "express": "^5.1.0"
-  }
-}
-
-
-
-{
-  "name": "backend",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
+    "express": "^5.1.0",
     "body-parser": "^2.2.0",
-    "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "cors": "^2.8.5"
   }
 }
+
