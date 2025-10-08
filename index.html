@@ -201,7 +201,6 @@ textarea{resize:vertical;}
     </div>
   </div>
 </div>
-
 <script>
 // Elements
 const googleBtn = document.getElementById('googleBtn');
@@ -332,13 +331,38 @@ cvDrop.addEventListener("drop", e => {
   if(e.dataTransfer.files.length) cvInput.files = e.dataTransfer.files;
 });
 
-// Form Submission
+// Form Submission with CV upload
 const appForm = document.getElementById("appForm");
 const successMsg = document.getElementById("successMsg");
-appForm.addEventListener("submit", e => {
+
+appForm.addEventListener("submit", async e => {
   e.preventDefault();
-  appForm.style.display='none';
-  successMsg.style.display='block';
+
+  if(cvInput.files.length === 0){
+    alert("Please upload your CV before submitting.");
+    return;
+  }
+
+  const formData = new FormData(appForm);
+  formData.append('cv', cvInput.files[0]);
+
+  try {
+    const response = await fetch('https://ac-corporations.onrender.com/submit-application', {
+      method: 'POST',
+      body: formData
+    });
+
+    if(response.ok){
+      appForm.style.display='none';
+      successMsg.style.display='block';
+    } else {
+      const text = await response.text();
+      alert("Error submitting application: " + text);
+    }
+  } catch(err){
+    console.error(err);
+    alert("Network error submitting application.");
+  }
 });
 </script>
 
