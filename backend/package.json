@@ -5,22 +5,18 @@
   "scripts": {
     "start": "node backend/server.js"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sam-Adk/HACKER.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/sam-Adk/HACKER/issues"
-  },
-  "homepage": "https://github.com/sam-Adk/HACKER#readme",
-  "description": "",
   "dependencies": {
     "express": "^5.1.0"
   }
 }
+
 
 
 {
