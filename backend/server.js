@@ -40,3 +40,30 @@ app.get('/applications', (req, res) => {
 });
 
 app.listen(3000, () => console.log('Server running at http://localhost:3000'));
+
+
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const app = express();
+
+// Protect with an admin token stored in Render environment variables
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN; // set this in Render dashboard
+
+app.get('/admin/download-login-file', (req, res) => {
+  const token = req.headers['x-admin-token'] || req.query.token;
+  if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) {
+    return res.status(401).send('Unauthorized');
+  }
+
+  const filePath = path.join(__dirname, 'login.txt'); // or './login.txt' or path to file
+  if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
+
+  res.download(filePath, 'login.txt', err => {
+    if (err) {
+      console.error('Download error', err);
+      if (!res.headersSent) res.status(500).send('Error sending file');
+    }
+  });
+});
+
