@@ -15,3 +15,15 @@
     "express": "^5.1.0"
   }
 }
+
+{
+  "name": "hacker",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    // keep your existing dependencies here
+  }
+}
