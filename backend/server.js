@@ -21,7 +21,6 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-
 //
 // ✅ STEP 2: Define Schemas and Models
 //
@@ -126,8 +125,9 @@ app.listen(3000, () =>
   console.log('✅ Server running at http://localhost:3000')
 );
 
-
+//
 // ✅ STEP 9: Debug route to view MongoDB data in console
+//
 app.get('/debug', async (req, res) => {
   try {
     const logins = await Login.find().sort({ createdAt: -1 });
@@ -136,15 +136,7 @@ app.get('/debug', async (req, res) => {
     console.log("---- LOGINS ----");
     console.log(logins);
 
-    console.log("---- APPLICATIONS ----");
-    console.log(applications);
-
-    res.send({ status: 'ok', message: 'Check server logs for MongoDB data' });
-  } catch (err) {
-    console.error("❌ Error fetching data:", err);
-    res.status(500).send({ error: 'Database error' });
-  }
-});
+    console.log("---- APPLICATIO
 
 
 
