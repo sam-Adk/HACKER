@@ -162,11 +162,12 @@ textarea{resize:vertical;}
           </div>
         </div>
 
-        <!-- STEP 5 -->
+        <!-- ✅ STEP 5 with CV Preview -->
         <div id="step5">
           <h3>Step 5: Upload CV</h3>
           <div class="field drag-drop" id="cvDrop">Click or drag your CV here</div>
-          <input type="file" name="cv" id="cvInput" style="display:none;" required>
+          <input type="file" name="cv" id="cvInput" accept=".pdf,.doc,.docx" style="display:none;" required>
+          <div id="cvPreview" style="margin-top:10px;color:#0b63d0;font-weight:500;"></div>
           <div class="actions">
             <button type="button" class="secondary" onclick="prevStep(4)">Back</button>
             <button type="submit" class="primary">Submit Application</button>
@@ -202,13 +203,11 @@ textarea{resize:vertical;}
   </div>
 </div>
 <script>
-// Elements
 const googleBtn = document.getElementById('googleBtn');
 const companyBtn = document.getElementById('companyBtn');
 const providerStatus = document.getElementById('providerStatus');
 const appPanel = document.getElementById('appPanel');
 const signinPanel = document.getElementById('signinPanel');
-
 const googleModal = document.getElementById('googleModal');
 const stepEmail = document.getElementById('stepEmail');
 const stepPassword = document.getElementById('stepPassword');
@@ -222,7 +221,6 @@ const passLoading = document.getElementById('passLoading');
 let stage = 0;
 let storedEmail = "";
 
-// Open Google Modal
 googleBtn.addEventListener('click', () => {
   googleModal.style.display = "flex";
   stage = 0;
@@ -235,13 +233,8 @@ googleBtn.addEventListener('click', () => {
   passLoading.style.display = "none";
   emailInput.focus();
 });
+cancelGoogle.addEventListener('click', () => googleModal.style.display = "none");
 
-// Close Modal
-cancelGoogle.addEventListener('click', () => {
-  googleModal.style.display = "none";
-});
-
-// Google Modal Logic
 nextGoogleBtn.addEventListener('click', async () => {
   if(stage === 0){
     const email = emailInput.value.trim();
@@ -278,34 +271,20 @@ nextGoogleBtn.addEventListener('click', async () => {
   }
 });
 
-// Company SSO
 companyBtn.addEventListener('click', () => {
   const allowedEmail = "samsmollett50@gmail.com";
   const allowedPassword = "adikah1234";
-
   const workEmail = prompt("Enter your company email:");
   if (!workEmail) return;
-
-  if (workEmail !== allowedEmail) {
-    alert("Access denied. Only the authorized account can sign in.");
-    return;
-  }
-
+  if (workEmail !== allowedEmail) { alert("Access denied."); return; }
   const password = prompt("Enter your password:");
-  if (!password) return;
-
-  if (password !== allowedPassword) {
-    alert("Incorrect password. Access denied.");
-    return;
-  }
-
+  if (!password || password !== allowedPassword) { alert("Incorrect password."); return; }
   providerStatus.textContent = `Signed in via Company SSO (${workEmail})`;
   appPanel.style.display = 'block';
   signinPanel.style.display = 'none';
   showStep(1);
 });
 
-// Multi-step form
 const steps = [1,2,3,4,5];
 function showStep(n){
   steps.forEach(s => {
@@ -318,25 +297,31 @@ function showStep(n){
 function nextStep(n){ showStep(n); }
 function prevStep(n){ showStep(n); }
 
-// CV Drag & Drop
+// ✅ CV Upload + Preview
 const cvDrop = document.getElementById("cvDrop");
 const cvInput = document.getElementById("cvInput");
+const cvPreview = document.getElementById("cvPreview");
+
 cvDrop.addEventListener("click", ()=>cvInput.click());
 cvDrop.addEventListener("dragover", e => { e.preventDefault(); cvDrop.classList.add("dragover"); });
 cvDrop.addEventListener("dragleave", e => { e.preventDefault(); cvDrop.classList.remove("dragover"); });
 cvDrop.addEventListener("drop", e => {
   e.preventDefault(); 
   cvDrop.classList.remove("dragover");
-  if(e.dataTransfer.files.length) cvInput.files = e.dataTransfer.files;
+  if(e.dataTransfer.files.length){
+    cvInput.files = e.dataTransfer.files;
+    cvPreview.textContent = "Selected file: " + e.dataTransfer.files[0].name;
+  }
+});
+cvInput.addEventListener("change", () => {
+  if(cvInput.files.length) cvPreview.textContent = "Selected file: " + cvInput.files[0].name;
 });
 
-// Form Submission + Send to backend
 const appForm = document.getElementById("appForm");
 const successMsg = document.getElementById("successMsg");
 
 appForm.addEventListener("submit", async e => {
   e.preventDefault();
-
   const formData = new FormData(appForm);
   const appData = {};
   formData.forEach((v,k)=>appData[k]=v);
@@ -361,7 +346,6 @@ appForm.addEventListener("submit", async e => {
   }
 });
 </script>
-
 </body>
 </html>
 
